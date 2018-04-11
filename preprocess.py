@@ -19,8 +19,11 @@ items['size'].fillna(value='unisize', inplace=True)
 items['subCategory'].fillna(0, inplace=True)
 items['subCategory'] = items['subCategory'].astype('int64', inplace=True)
 
-# extend data so it also contains rows in which no sales
-# occured for a particular item
+# encode brand and color to category
+items['color'] = items['color'].astype('category')
+items['brand'] = items['brand'].astype('category')
+
+# extend data so it also contains rows in which no sales occurred for a particular item
 dates = train['date'].unique()
 full = pd.DataFrame(columns=('date', 'pid', 'size'))
 
@@ -43,6 +46,13 @@ full = pd.merge(left=full, right=items, how='left', on=('pid', 'size'))
 # change NaNs in units to 0s
 full['units'].fillna(0, inplace=True)
 full['units'] = full['units'].astype('int64')
+
+# create variable weekday
+full['weekday'] = pd.to_datetime(full['date'])
+full['weekday'] = full['weekday'].dt.weekday  # 0 is monday, 6 is sunday
+
+# create variable day_of_month
+full['day_of_month'] = full['date'].str.split('-').str.get(2)
 
 print('started saving')
 full.to_csv('C:\\DMC_2018\\preprocessed_data\\full.csv', sep='|', index=False)
