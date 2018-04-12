@@ -5,7 +5,7 @@ C:\\DMC_2018\\model_summaries\\[ERROR]_[ALGORITHM]_[TIMESTAMP].txt"
 
 """
 
-import datetime as dt
+from datetime import datetime as dt
 
 import numpy as np
 import pandas as pd
@@ -44,18 +44,24 @@ def calculate_error(series1, series2):
 
 # create file to write performance stats to
 algorithm = 'RF'
-now = ''.join(str(dt.date.today()).split('-'))
-name = now + '_' + algorithm + '.txt'
+
+date = dt.now().date()
+time = dt.now().time()
+
+name = str(date).replace('-', '') + '_' + str(time)[:8].replace(':', '') + '_' + algorithm + '.txt'
 
 file = open(output_path + name, "w")
 
 print('started training')
+
 # set up time series crossvalidation
-tscv2 = TimeSeriesSplitCustom(split_dates=['2017-11-01', '2017-12-01', '2018-01-01'])
+split_dates = ('2017-11-01', '2017-12-01', '2018-01-01')
+tscv2 = TimeSeriesSplitCustom(split_dates=split_dates)
+file.write('dates used to split train/test: \n' + ', '.join(split_dates))
 
 # select variables to train
 train_vars = ('rrp', 'stock', 'weekday', 'day_of_month')
-file.write('variables used: \n' + ', '.join(train_vars))
+file.write('\n\nvariables used: \n' + ', '.join(train_vars))
 
 all_zero_errors = []
 model_errors = []
@@ -67,7 +73,7 @@ for train_index, test_index in tscv2.split(full):
     all_zero_errors.append(calculate_error(np.zeros(len(y_test), dtype='int'), y_test))
 
     # train model
-    regr = RandomForestRegressor(max_depth=2, random_state=0)
+    regr = RandomForestRegressor(n_estimators=3, max_depth=2, random_state=0)
     regr.fit(X_train.loc[:, train_vars], y_train)
     test_preds = regr.predict(X_test.loc[:, train_vars])
     model_errors.append(calculate_error(test_preds, y_test))
@@ -75,8 +81,13 @@ for train_index, test_index in tscv2.split(full):
 print(all_zero_errors)
 print(model_errors)
 
-
-file.write("\nall zero benchmark: " + ', '.join((str(e) for e in all_zero_errors)))
+file.write("\n\nall zero benchmark: " + ', '.join((str(e) for e in all_zero_errors)))
 file.write("\nalgorithm performance: " + ', '.join((str(e) for e in model_errors)))
-
+file.write("\n\nmodel parameters: ")
+params = regr.get_params()
+for param in params:
+    file.write("\n" + param + ': ' + str(params[param]))
+file.write("\n\nlast run predictions: ")
+for t in test_preds[:10000]:
+    file.write("\n" + str(t))
 file.close()
