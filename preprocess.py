@@ -5,12 +5,17 @@ C:\\DMC_2018\\preprocessed_data\\full.csv
 
 import pandas as pd
 
+from raw_data_types import items_types
+from raw_data_types import prices_types
+from raw_data_types import train_types
+
 PATH = "C:\\DMC_2018\\raw_data\\"
 
 print('started reading')
-items = pd.read_csv(PATH + "items.csv", sep='|')
-prices = pd.read_csv(PATH + "prices.csv", sep='|')
-train = pd.read_csv(PATH + "train.csv", sep='|')
+
+items = pd.read_csv(PATH + "items.csv", sep='|', dtype=items_types)
+prices = pd.read_csv(PATH + "prices.csv", sep='|', dtype=prices_types)
+train = pd.read_csv(PATH + "train.csv", sep='|', dtype=train_types)
 
 # handle NaNs
 train['size'].fillna(value='unisize', inplace=True)

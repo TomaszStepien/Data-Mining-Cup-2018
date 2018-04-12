@@ -7,9 +7,10 @@ C:\\DMC_2018\\model_summaries\\[ERROR]_[ALGORITHM]_[TIMESTAMP].txt"
 
 import datetime as dt
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
+
 from TimeSeriesSplitCustom import TimeSeriesSplitCustom
 
 output_path = "C:\\DMC_2018\\model_summaries\\"
@@ -71,8 +72,9 @@ for train_index, test_index in tscv2.split(full):
     test_preds = regr.predict(X_test.loc[:, train_vars])
     model_errors.append(calculate_error(test_preds, y_test))
 
-print(model_errors)
 print(all_zero_errors)
+print(model_errors)
+
 
 file.write("\nall zero benchmark: " + ', '.join((str(e) for e in all_zero_errors)))
 file.write("\nalgorithm performance: " + ', '.join((str(e) for e in model_errors)))
