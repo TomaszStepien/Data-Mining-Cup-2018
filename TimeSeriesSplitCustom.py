@@ -2,8 +2,6 @@
 flexibility to handle our kind of data
 """
 
-import pandas as pd
-
 
 class TimeSeriesSplitCustom:
     """
