@@ -6,7 +6,7 @@ C:\\DMC_2018\\model_summaries\\[ERROR]_[ALGORITHM]_[TIMESTAMP].txt"
 """
 
 from datetime import datetime as dt
-
+import itertools
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
@@ -34,7 +34,11 @@ types = {
     'weekday': 'int64',
     'day_of_month': 'int64'
 }
+
 full = pd.read_csv(data_path, sep='|', dtype=types)
+
+# select train variables
+train_vars = ('rrp', 'stock', 'weekday', 'day_of_month')
 
 
 # define error function
@@ -42,52 +46,73 @@ def calculate_error(series1, series2):
     return np.sqrt(np.sum(np.abs(series1 - series2)))
 
 
-# create file to write performance stats to
-algorithm = 'RF'
-
-date = dt.now().date()
-time = dt.now().time()
-
-name = str(date).replace('-', '') + '_' + str(time)[:8].replace(':', '') + '_' + algorithm + '.txt'
-
-file = open(output_path + name, "w")
-
-print('started training')
-
 # set up time series crossvalidation
 split_dates = ('2017-11-01', '2017-12-01', '2018-01-01')
-tscv2 = TimeSeriesSplitCustom(split_dates=split_dates)
-file.write('dates used to split train/test: \n' + ', '.join(split_dates))
+tscv = TimeSeriesSplitCustom(split_dates=split_dates)
 
-# select variables to train
-train_vars = ('rrp', 'stock', 'weekday', 'day_of_month')
-file.write('\n\nvariables used: \n' + ', '.join(train_vars))
+print('started gridsearch')
+param_grid = {
+    # 'n_estimators': 100,
+    'max_depth': (7, 8, 9, 10, 20)
+}
 
-all_zero_errors = []
-model_errors = []
-for train_index, test_index in tscv2.split(full):
-    X_train, X_test = full.iloc[train_index, :], full.iloc[test_index, :]
-    y_train, y_test = full.loc[train_index, 'units'], full.loc[test_index, 'units']
+a = [param_grid[k] for k in param_grid]
 
-    # calculate all 0 benchmark error on test set
-    all_zero_errors.append(calculate_error(np.zeros(len(y_test), dtype='int'), y_test))
+# get all combinations of parameters
+values_comb = (list(itertools.product(*a)))
+keys = list(param_grid.keys())
+counter = 1
+for values in values_comb:
+    print("training: " + str(counter) + " of " + str(len(values_comb)))
+    counter += 1
+    parameters = {}
+    for i in range(len(values)):
+        parameters[keys[i]] = values[i]
 
-    # train model
-    regr = RandomForestRegressor(n_estimators=3, max_depth=2, random_state=0)
-    regr.fit(X_train.loc[:, train_vars], y_train)
-    test_preds = regr.predict(X_test.loc[:, train_vars])
-    model_errors.append(calculate_error(test_preds, y_test))
+    # build model
+    # parameters = {
+    #     'n_estimators': 3,
+    #     'max_depth': 2
+    # }
 
-print(all_zero_errors)
-print(model_errors)
+    regr = RandomForestRegressor(**parameters)
+    regr.set_params(n_jobs=-1)
+    regr.set_params(n_estimators=100)
+    
+    all_zero_errors = []
+    model_errors = []
+    for train_index, test_index in tscv.split(full):
+        X_train, X_test = full.iloc[train_index, :], full.iloc[test_index, :]
+        y_train, y_test = full.loc[train_index, 'units'], full.loc[test_index, 'units']
 
-file.write("\n\nall zero benchmark: " + ', '.join((str(e) for e in all_zero_errors)))
-file.write("\nalgorithm performance: " + ', '.join((str(e) for e in model_errors)))
-file.write("\n\nmodel parameters: ")
-params = regr.get_params()
-for param in params:
-    file.write("\n" + param + ': ' + str(params[param]))
-file.write("\n\nlast run predictions: ")
-for t in test_preds[:10000]:
-    file.write("\n" + str(t))
-file.close()
+        # calculate all 0 benchmark error on test set
+        all_zero_errors.append(calculate_error(np.zeros(len(y_test), dtype='int'), y_test))
+
+        # fit model
+        regr.fit(X_train.loc[:, train_vars], y_train)
+        test_preds = regr.predict(X_test.loc[:, train_vars])
+        model_errors.append(calculate_error(test_preds, y_test))
+
+    # create file to write performance stats to
+    algorithm = 'RF'
+    date = dt.now().date()
+    time = dt.now().time()
+    name = str(np.round(np.mean(model_errors), 3)) + '_' \
+           + str(date).replace('-', '') + '_' \
+           + str(time)[:8].replace(':', '') + '_' \
+           + algorithm + '.txt'
+
+    file = open(output_path + name, "w")
+
+    file.write('dates used to split train/test: \n' + ', '.join(split_dates))
+    file.write('\n\nvariables used: \n' + ', '.join(train_vars))
+    file.write("\n\nall zero benchmark: " + ', '.join((str(e) for e in all_zero_errors)))
+    file.write("\nalgorithm performance: " + ', '.join((str(e) for e in model_errors)))
+    file.write("\n\nmodel parameters: ")
+    params = regr.get_params()
+    for param in params:
+        file.write("\n" + param + ': ' + str(params[param]))
+    file.write("\n\nlast run predictions: ")
+    for t in test_preds[:10000]:
+        file.write("\n" + str(t))
+    file.close()
