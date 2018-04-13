@@ -56,7 +56,8 @@ print('started training')
 
 # set up time series crossvalidation
 split_dates = ('2017-11-01', '2017-12-01', '2018-01-01')
-tscv2 = TimeSeriesSplitCustom(split_dates=split_dates)
+tscv = TimeSeriesSplitCustom(split_dates=split_dates)
+
 file.write('dates used to split train/test: \n' + ', '.join(split_dates))
 
 # select variables to train
@@ -65,7 +66,9 @@ file.write('\n\nvariables used: \n' + ', '.join(train_vars))
 
 all_zero_errors = []
 model_errors = []
-for train_index, test_index in tscv2.split(full):
+regr = RandomForestRegressor(n_estimators=3, max_depth=2, random_state=0)
+
+for train_index, test_index in tscv.split(full):
     X_train, X_test = full.iloc[train_index, :], full.iloc[test_index, :]
     y_train, y_test = full.loc[train_index, 'units'], full.loc[test_index, 'units']
 
@@ -73,7 +76,6 @@ for train_index, test_index in tscv2.split(full):
     all_zero_errors.append(calculate_error(np.zeros(len(y_test), dtype='int'), y_test))
 
     # train model
-    regr = RandomForestRegressor(n_estimators=3, max_depth=2, random_state=0)
     regr.fit(X_train.loc[:, train_vars], y_train)
     test_preds = regr.predict(X_test.loc[:, train_vars])
     model_errors.append(calculate_error(test_preds, y_test))
