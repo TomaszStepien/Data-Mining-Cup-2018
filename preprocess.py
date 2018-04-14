@@ -9,6 +9,8 @@ from raw_data_types import items_types
 from raw_data_types import prices_types
 from raw_data_types import train_types
 
+from sklearn.feature_extraction import DictVectorizer, FeatureHasher
+
 PATH = "C:\\DMC_2018\\raw_data\\"
 
 print('started reading')
@@ -59,5 +61,24 @@ full['weekday'] = full['weekday'].dt.weekday  # 0 is monday, 6 is sunday
 # create variable day_of_month
 full['day_of_month'] = full['date'].str.split('-').str.get(2)
 
+# hash categorical variables
+h = FeatureHasher(n_features=5, input_type='string')
+f = h.transform(full.brand)
+hashed = pd.DataFrame(f.toarray())
+
+hashed.rename(
+    columns={
+        0: 'brand_0',
+        1: 'brand_1',
+        2: 'brand_2',
+        3: 'brand_3',
+        4: 'brand_4'
+    },
+    inplace=True)
+
+full = pd.concat([full, hashed], axis=1)
+
 print('started saving')
 full.to_csv('C:\\DMC_2018\\preprocessed_data\\full.csv', sep='|', index=False)
+
+print(full.info())

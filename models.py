@@ -5,11 +5,12 @@ C:\\DMC_2018\\model_summaries\\[ERROR]_[ALGORITHM]_[TIMESTAMP].txt"
 
 """
 
-from datetime import datetime as dt
 import itertools
+from datetime import datetime as dt
+
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
 
 from TimeSeriesSplitCustom import TimeSeriesSplitCustom
 
@@ -32,13 +33,28 @@ types = {
     'stock': 'int64',
     'releaseDate': 'object',
     'weekday': 'int64',
-    'day_of_month': 'int64'
+    'day_of_month': 'int64',
+    'brand_0': 'float64',
+    'brand_1': 'float64',
+    'brand_2': 'float64',
+    'brand_3': 'float64',
+    'brand_4': 'float64',
 }
 
 full = pd.read_csv(data_path, sep='|', dtype=types)
 
+full.loc[full['units'] > 1, 'units'] = 1
+
 # select train variables
-train_vars = ('rrp', 'stock', 'weekday', 'day_of_month')
+train_vars = ('rrp',
+              'stock',
+              'weekday',
+              'day_of_month',
+              'brand_0',
+              'brand_1',
+              'brand_2',
+              'brand_3',
+              'brand_4',)
 
 
 # define error function
@@ -53,7 +69,7 @@ tscv = TimeSeriesSplitCustom(split_dates=split_dates)
 print('started gridsearch')
 param_grid = {
     # 'n_estimators': 100,
-    'max_depth': (7, 8, 9, 10, 20)
+    'max_depth': (2, 4, 8)
 }
 
 a = [param_grid[k] for k in param_grid]
@@ -75,10 +91,10 @@ for values in values_comb:
     #     'max_depth': 2
     # }
 
-    regr = RandomForestRegressor(**parameters)
+    regr = RandomForestClassifier(**parameters)
     regr.set_params(n_jobs=-1)
-    regr.set_params(n_estimators=100)
-    
+    regr.set_params(n_estimators=3)
+
     all_zero_errors = []
     model_errors = []
     for train_index, test_index in tscv.split(full):
@@ -105,14 +121,16 @@ for values in values_comb:
     file = open(output_path + name, "w")
 
     file.write('dates used to split train/test: \n' + ', '.join(split_dates))
-    file.write('\n\nvariables used: \n' + ', '.join(train_vars))
+    file.write('\n\nvariables used: ')
+    for t in train_vars:
+        file.write("\n" + str(t))
     file.write("\n\nall zero benchmark: " + ', '.join((str(e) for e in all_zero_errors)))
     file.write("\nalgorithm performance: " + ', '.join((str(e) for e in model_errors)))
     file.write("\n\nmodel parameters: ")
     params = regr.get_params()
     for param in params:
         file.write("\n" + param + ': ' + str(params[param]))
-    file.write("\n\nlast run predictions: ")
-    for t in test_preds[:10000]:
-        file.write("\n" + str(t))
+    file.write("\n\nlast run predictions (actual vs predicted): ")
+    for t, t1 in zip(test_preds[:10000], full['units']):
+        file.write("\n" + str(t1) + '\t\t' + str(t))
     file.close()
