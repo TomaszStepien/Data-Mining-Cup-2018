@@ -19,42 +19,43 @@ data_path = "C:\\DMC_2018\\preprocessed_data\\full.csv"
 
 # read preprocessed data
 print('started reading')
-types = {
-    'date': 'object',
-    'pid': 'int64',
-    'size': 'object',
-    'units': 'int64',
-    'color': 'category',
-    'brand': 'object',
-    'rrp': 'float64',
-    'mainCategory': 'int64',
-    'category': 'int64',
-    'subCategory': 'int64',
-    'stock': 'int64',
-    'releaseDate': 'object',
-    'weekday': 'int64',
-    'day_of_month': 'int64',
-    'brand_0': 'float64',
-    'brand_1': 'float64',
-    'brand_2': 'float64',
-    'brand_3': 'float64',
-    'brand_4': 'float64',
-}
+
+# read types from text file
+types_file = open("C:\\DMC_2018\\preprocessed_data\\types.txt", 'r')
+types = {f[:f.find(',')]: f[f.find(',') + 1:-1] for f in types_file.readlines()}
 
 full = pd.read_csv(data_path, sep='|', dtype=types)
 
+# trim target variable for now
 full.loc[full['units'] > 1, 'units'] = 1
 
 # select train variables
 train_vars = ('rrp',
               'stock',
-              'weekday',
-              'day_of_month',
-              'brand_0',
-              'brand_1',
-              'brand_2',
-              'brand_3',
-              'brand_4',)
+              'brand_hash_0',
+              'brand_hash_1',
+              'brand_hash_2',
+              'brand_hash_3',
+              'brand_hash_4',
+              'brand_hash_5',
+              'brand_hash_6',
+              'brand_hash_7',
+              'brand_hash_8',
+              'brand_hash_9',
+              'brand_hash_10',
+              'brand_hash_11',
+              'color_hash_0',
+              'color_hash_1',
+              'color_hash_2',
+              'color_hash_3',
+              'color_hash_4',
+              'color_hash_5',
+              'color_hash_6',
+              'color_hash_7',
+              'mainCategory_onehot_1',
+              'mainCategory_onehot_9',
+              'mainCategory_onehot_15',
+              )
 
 
 # define error function
@@ -69,7 +70,7 @@ tscv = TimeSeriesSplitCustom(split_dates=split_dates)
 print('started gridsearch')
 param_grid = {
     # 'n_estimators': 100,
-    'max_depth': (2, 4, 8)
+    'max_depth': (2, 4, 8, 16, 20, 25)
 }
 
 a = [param_grid[k] for k in param_grid]
@@ -93,7 +94,7 @@ for values in values_comb:
 
     regr = RandomForestClassifier(**parameters)
     regr.set_params(n_jobs=-1)
-    regr.set_params(n_estimators=3)
+    regr.set_params(n_estimators=5)
 
     all_zero_errors = []
     model_errors = []

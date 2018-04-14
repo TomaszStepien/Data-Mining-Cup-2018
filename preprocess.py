@@ -27,8 +27,8 @@ items['subCategory'].fillna(0, inplace=True)
 items['subCategory'] = items['subCategory'].astype('int64', inplace=True)
 
 # encode brand and color to category
-items['color'] = items['color'].astype('category')
-items['brand'] = items['brand'].astype('category')
+# items['color'] = items['color'].astype('category')
+# items['brand'] = items['brand'].astype('category')
 
 # extend data so it also contains rows in which no sales occurred for a particular item
 dates = train['date'].unique()
@@ -61,24 +61,44 @@ full['weekday'] = full['weekday'].dt.weekday  # 0 is monday, 6 is sunday
 # create variable day_of_month
 full['day_of_month'] = full['date'].str.split('-').str.get(2)
 
-# hash categorical variables
-h = FeatureHasher(n_features=5, input_type='string')
-f = h.transform(full.brand)
-hashed = pd.DataFrame(f.toarray())
 
-hashed.rename(
-    columns={
-        0: 'brand_0',
-        1: 'brand_1',
-        2: 'brand_2',
-        3: 'brand_3',
-        4: 'brand_4'
-    },
-    inplace=True)
+# hash categorical variables brand and color
+def hash_column(df, colname, n_columns):
+    h = FeatureHasher(n_features=n_columns, input_type='string')
+    rename_dict = {i: colname + '_hash_' + str(i) for i in range(n_columns)}
+    f = h.transform(df[colname].astype('object'))
+    hashed = pd.DataFrame(f.toarray())
+    hashed.rename(columns=rename_dict, inplace=True)
+    df = pd.concat([df, hashed], axis=1)
+    df = df.drop(colname, axis=1)
+    return df
 
-full = pd.concat([full, hashed], axis=1)
 
+full = hash_column(full, 'color', len(full['color'].unique()) // 2)
+full = hash_column(full, 'brand', len(full['brand'].unique()) // 2)
+
+
+# one hot categories
+def one_hot_column(df, colname):
+    dummies = pd.get_dummies(df[colname], colname + '_onehot')
+    df = pd.concat([df, dummies], axis=1)
+    df = df.drop(colname, axis=1)
+    return df
+
+
+full = one_hot_column(full, 'mainCategory')
+# full = one_hot_column(full, 'category')
+# full = one_hot_column(full, 'subCategory')
+
+
+# save to csv
 print('started saving')
+
 full.to_csv('C:\\DMC_2018\\preprocessed_data\\full.csv', sep='|', index=False)
 
 print(full.info())
+
+# save types to text file
+file = open("C:\\DMC_2018\\preprocessed_data\\types.txt", 'w')
+for t in list(full.columns.values):
+    file.write(str(t) + ',' + str(full[t].dtype) + '\n')
