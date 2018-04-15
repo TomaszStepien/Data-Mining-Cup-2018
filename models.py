@@ -13,63 +13,19 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
 from TimeSeriesSplitCustom import TimeSeriesSplitCustom
+from functions import read_types, calculate_error
+from train_vars import train_vars
 
 output_path = "C:\\DMC_2018\\model_summaries\\"
 data_path = "C:\\DMC_2018\\preprocessed_data\\full.csv"
 
 # read preprocessed data
 print('started reading')
-
-
-def read_types(path="C:\\DMC_2018\\preprocessed_data\\types.txt"):
-    """
-
-    :param path:
-    :return: a dictrionary of types
-    """
-    types_file = open(path, 'r')
-    return {f[:f.find(',')]: f[f.find(',') + 1:-1] for f in types_file.readlines()}
-
-
 types = read_types()
 full = pd.read_csv(data_path, sep='|', dtype=types)
 
 # trim target variable for now
 full.loc[full['units'] > 1, 'units'] = 1
-
-# select train variables
-train_vars = ('rrp',
-              'stock',
-              'brand_hash_0',
-              'brand_hash_1',
-              'brand_hash_2',
-              'brand_hash_3',
-              'brand_hash_4',
-              'brand_hash_5',
-              'brand_hash_6',
-              'brand_hash_7',
-              'brand_hash_8',
-              'brand_hash_9',
-              'brand_hash_10',
-              'brand_hash_11',
-              'color_hash_0',
-              'color_hash_1',
-              'color_hash_2',
-              'color_hash_3',
-              'color_hash_4',
-              'color_hash_5',
-              'color_hash_6',
-              'color_hash_7',
-              'mainCategory_onehot_1',
-              'mainCategory_onehot_9',
-              'mainCategory_onehot_15',
-              )
-
-
-# define error function
-def calculate_error(series1, series2):
-    return np.sqrt(np.sum(np.abs(series1 - series2)))
-
 
 # set up time series crossvalidation
 split_dates = ('2017-11-01', '2017-12-01', '2018-01-01')
