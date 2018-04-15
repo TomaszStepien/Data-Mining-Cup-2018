@@ -20,10 +20,18 @@ data_path = "C:\\DMC_2018\\preprocessed_data\\full.csv"
 # read preprocessed data
 print('started reading')
 
-# read types from text file
-types_file = open("C:\\DMC_2018\\preprocessed_data\\types.txt", 'r')
-types = {f[:f.find(',')]: f[f.find(',') + 1:-1] for f in types_file.readlines()}
 
+def read_types(path="C:\\DMC_2018\\preprocessed_data\\types.txt"):
+    """
+
+    :param path:
+    :return: a dictrionary of types
+    """
+    types_file = open(path, 'r')
+    return {f[:f.find(',')]: f[f.find(',') + 1:-1] for f in types_file.readlines()}
+
+
+types = read_types()
 full = pd.read_csv(data_path, sep='|', dtype=types)
 
 # trim target variable for now
@@ -85,12 +93,6 @@ for values in values_comb:
     parameters = {}
     for i in range(len(values)):
         parameters[keys[i]] = values[i]
-
-    # build model
-    # parameters = {
-    #     'n_estimators': 3,
-    #     'max_depth': 2
-    # }
 
     regr = RandomForestClassifier(**parameters)
     regr.set_params(n_jobs=-1)
