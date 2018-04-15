@@ -34,7 +34,7 @@ tscv = TimeSeriesSplitCustom(split_dates=split_dates)
 print('started gridsearch')
 param_grid = {
     # 'n_estimators': 100,
-    'max_depth': (2, 4, 8, 16, 20, 25)
+    'max_depth': (2, 4, 8, 16)
 }
 
 a = [param_grid[k] for k in param_grid]
