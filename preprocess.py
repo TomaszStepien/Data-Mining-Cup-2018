@@ -67,7 +67,7 @@ full = full.loc[full['days_since_release'] >= 0, :]
 full = full.drop('releaseDate', axis=1)
 
 # we have to reset index to avoid weid errors
-full.reset_index(inplace=True)
+full.reset_index(inplace=True, drop=True)
 
 # change NaNs in units to 0s
 full['units'].fillna(0, inplace=True)
@@ -96,11 +96,19 @@ print('hashing')
 # full = one_hot_column(full, 'category')
 # full = one_hot_column(full, 'subCategory')
 
+# add price variable from prices to full
+rename_dict = {date: 'price' + date for date in prices.columns.values if date != 'pid' and date != 'size'}
+prices.rename(columns=rename_dict, inplace=True)
+prices = pd.wide_to_long(prices, stubnames='price', i=['pid', 'size'], j='date')
+prices.reset_index(inplace=True)
+full = pd.merge(left=full, right=prices, how='left', on=('pid', 'size', 'date'))
 
 # save to csv
 print('saving')
 full.to_csv(output_path + 'full.csv', sep='|', index=False)
 print(full.info())
+
+print(full.head(10))
 
 # save types to text file
 file = open(output_path + 'types.txt', 'w')
