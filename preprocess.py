@@ -74,25 +74,25 @@ full['units'].fillna(0, inplace=True)
 full['units'] = full['units'].astype('int64')
 
 # create variable weekday
-full['weekday'] = pd.to_datetime(full['date'])
-full['weekday'] = full['weekday'].dt.weekday  # 0 is monday, 6 is sunday
+# full['weekday'] = pd.to_datetime(full['date'])
+# full['weekday'] = full['weekday'].dt.weekday  # 0 is monday, 6 is sunday
 
 # # create variable day_of_month
 # full['day_of_month'] = full['date'].str.split('-').str.get(2)
 
 # create variable week of month
-full['week_of_month'] = pd.to_numeric(full['date'].str.split('-').str.get(2)) // 7
+# full['week_of_month'] = pd.to_numeric(full['date'].str.split('-').str.get(2)) // 7
 
 # hash categorical variables brand and color
 print('hashing')
-full = hash_column(full, 'color', len(full['color'].unique()) // 2)
-full = hash_column(full, 'brand', len(full['brand'].unique()) // 2)
+# full = hash_column(full, 'color', len(full['color'].unique()) // 2)
+# full = hash_column(full, 'brand', len(full['brand'].unique()) // 2)
 
 # one hot categories
-print('one hotting')
-full = one_hot_column(full, 'mainCategory')
-full = one_hot_column(full, 'weekday')
-full = one_hot_column(full, 'week_of_month')
+# print('one hotting')
+# full = one_hot_column(full, 'mainCategory')
+# full = one_hot_column(full, 'weekday')
+# full = one_hot_column(full, 'week_of_month')
 # full = one_hot_column(full, 'category')
 # full = one_hot_column(full, 'subCategory')
 

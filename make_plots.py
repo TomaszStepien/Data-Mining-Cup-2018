@@ -30,10 +30,12 @@ for item_id in item_ids:
     sizes = sub_full['size'].unique()
     for size in sizes:
         sub_sub_full = sub_full[sub_full['size'] == size]
-        fig, ax = plt.subplots(figsize=(18, 5))
+        fig, ax = plt.subplots(figsize=(18, 10))
         s1 = sns.barplot(x=sub_sub_full['date'], y=sub_sub_full['units'], ax=ax, color=plot_color)
+        ax.plot(sub_sub_full['date'], sub_sub_full['stock'])
         l1 = s1.set_xticklabels(labels=s1.get_xticklabels(), rotation=90)
-        plt.plot(sub_sub_full['stock'])
+        plt.yticks(np.arange(min(min(sub_sub_full['units']), min(sub_sub_full['stock'])),
+                             max(max(sub_sub_full['units']), max(sub_sub_full['stock'])) + 1, 1.0))
 
         size = size.replace('/', '_')
         size = size.replace('\\', '_')
@@ -45,6 +47,10 @@ for item_id in item_ids:
         size = size.replace('>', '_')
         size = size.replace('|', '_')
 
-        name = 'plots\\' + str(item_id) + '_' + size + '.png'
+        name = 'plots\\' \
+               + str(item_id) \
+               + '_' \
+               + size + '.png'
+
         plt.savefig(name)
         plt.close()
