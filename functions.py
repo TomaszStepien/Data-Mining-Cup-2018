@@ -18,7 +18,7 @@ def hash_column(df, colname, n_columns):
 
     h = FeatureHasher(n_features=n_columns, input_type='string')
     rename_dict = {i: colname + '_hash_' + str(i) for i in range(n_columns)}
-    f = h.transform(df[colname].astype('object'))
+    f = h.transform(df[colname])
     hashed = pd.DataFrame(f.toarray())
     hashed.rename(columns=rename_dict, inplace=True)
     df = pd.concat([df, hashed], axis=1)

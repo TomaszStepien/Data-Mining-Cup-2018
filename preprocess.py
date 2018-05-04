@@ -56,33 +56,59 @@ full = pd.merge(left=full, right=items, how='left', on=('pid', 'size'))
 # leave prices for now too speed things up
 # full = pd.merge(left=full, right=prices, how='left', on=('pid', 'size'))
 
+# create variable days_since release
+full['days_since_release'] = pd.to_datetime(full['date']) - pd.to_datetime(full['releaseDate'])
+full['days_since_release'] = full['days_since_release'].astype('int64')
+
+# remove rows in which release_date is later than date.
+# We do not want to confuse models with 0 sales for items that did not yet exist
+# full = full.loc[full['date'] >= full['releaseDate'], :]
+full = full.loc[full['days_since_release'] >= 0, :]
+full = full.drop('releaseDate', axis=1)
+
+# we have to reset index to avoid weid errors
+full.reset_index(inplace=True, drop=True)
+
 # change NaNs in units to 0s
 full['units'].fillna(0, inplace=True)
 full['units'] = full['units'].astype('int64')
 
 # create variable weekday
-full['weekday'] = pd.to_datetime(full['date'])
-full['weekday'] = full['weekday'].dt.weekday  # 0 is monday, 6 is sunday
+# full['weekday'] = pd.to_datetime(full['date'])
+# full['weekday'] = full['weekday'].dt.weekday  # 0 is monday, 6 is sunday
 
-# create variable day_of_month
-full['day_of_month'] = full['date'].str.split('-').str.get(2)
+# # create variable day_of_month
+# full['day_of_month'] = full['date'].str.split('-').str.get(2)
+
+# create variable week of month
+# full['week_of_month'] = pd.to_numeric(full['date'].str.split('-').str.get(2)) // 7
 
 # hash categorical variables brand and color
 print('hashing')
-full = hash_column(full, 'color', len(full['color'].unique()) // 2)
-full = hash_column(full, 'brand', len(full['brand'].unique()) // 2)
+# full = hash_column(full, 'color', len(full['color'].unique()) // 2)
+# full = hash_column(full, 'brand', len(full['brand'].unique()) // 2)
 
 # one hot categories
-print('one hotting')
-full = one_hot_column(full, 'mainCategory')
+# print('one hotting')
+# full = one_hot_column(full, 'mainCategory')
+# full = one_hot_column(full, 'weekday')
+# full = one_hot_column(full, 'week_of_month')
 # full = one_hot_column(full, 'category')
 # full = one_hot_column(full, 'subCategory')
 
+# add price variable from prices to full
+rename_dict = {date: 'price' + date for date in prices.columns.values if date != 'pid' and date != 'size'}
+prices.rename(columns=rename_dict, inplace=True)
+prices = pd.wide_to_long(prices, stubnames='price', i=['pid', 'size'], j='date')
+prices.reset_index(inplace=True)
+full = pd.merge(left=full, right=prices, how='left', on=('pid', 'size', 'date'))
 
 # save to csv
 print('saving')
 full.to_csv(output_path + 'full.csv', sep='|', index=False)
 print(full.info())
+
+print(full.head(10))
 
 # save types to text file
 file = open(output_path + 'types.txt', 'w')
