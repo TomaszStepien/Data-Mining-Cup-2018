@@ -57,7 +57,7 @@ full = pd.merge(left=full, right=items, how='left', on=('pid', 'size'))
 # full = pd.merge(left=full, right=prices, how='left', on=('pid', 'size'))
 
 # create variable days_since release
-full['days_since_release'] = pd.to_datetime(full['date']) - pd.to_datetime(full['releaseDate'])
+full['days_since_release'] = (pd.to_datetime(full['date']) - pd.to_datetime(full['releaseDate'])).dt.days
 full['days_since_release'] = full['days_since_release'].astype('int64')
 
 # remove rows in which release_date is later than date.
@@ -102,6 +102,12 @@ prices.rename(columns=rename_dict, inplace=True)
 prices = pd.wide_to_long(prices, stubnames='price', i=['pid', 'size'], j='date')
 prices.reset_index(inplace=True)
 full = pd.merge(left=full, right=prices, how='left', on=('pid', 'size', 'date'))
+
+# add rrp - price
+full['rrp_minus_price'] = full['rrp'] - full['price']
+
+# add rrp/price
+full['rrp_div_price'] = full['rrp'] / full['price']
 
 # save to csv
 print('saving')

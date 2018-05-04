@@ -1,15 +1,19 @@
-import itertools
 from datetime import datetime as dt
-
-import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 import numpy as np
+import pandas as pd
 from keras.layers import Dense
+from keras.layers import Embedding
+from keras.layers import Flatten
+from keras.layers import LSTM
 from keras.models import Sequential
 
 from TimeSeriesSplitCustom import TimeSeriesSplitCustom
 from functions import calculate_error
 from functions import read_types
-from train_vars import train_vars
+
+# from train_vars import train_vars
+train_vars = ('size')
 
 output_path = "C:\\DMC_2018\\model_summaries\\"
 data_path = "C:\\DMC_2018\\preprocessed_data\\full.csv"
@@ -43,10 +47,17 @@ tscv = TimeSeriesSplitCustom(split_dates=split_dates)
 # for i in range(len(values)):
 #     parameters[keys[i]] = values[i]
 
-# For a single-input model with 2 classes (binary classification):
+n_ids = full['size'].nunique()
+le = LabelEncoder()
+le.fit(full['size'])
+full['size'] = le.transform(full['size'])
+
 model = Sequential()
-model.add(Dense(len(train_vars), activation='relu', input_dim=len(train_vars)))
-model.add(Dense(32, activation='relu'))
+model.add(Embedding(input_dim=n_ids, output_dim=256, input_length=1))
+# model.add(Flatten())
+model.add(LSTM(128))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(64, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
