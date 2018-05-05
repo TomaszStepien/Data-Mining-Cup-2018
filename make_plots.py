@@ -16,12 +16,13 @@ types = {'pid': 'int64',
          'size': 'object',
          'units': 'int64',
          'date': 'object',
-         'stock': 'int64'}
+         'stock': 'int64',
+         'price': 'float64'}
 
 full = pd.read_csv(data_path,
                    sep='|',
                    dtype=types,
-                   usecols=['pid', 'size', 'units', 'date', 'stock'])
+                   usecols=['pid', 'size', 'units', 'date', 'stock', 'price'])
 
 item_ids = full['pid'].unique()
 
@@ -36,6 +37,12 @@ for item_id in item_ids:
         l1 = s1.set_xticklabels(labels=s1.get_xticklabels(), rotation=90)
         plt.yticks(np.arange(min(min(sub_sub_full['units']), min(sub_sub_full['stock'])),
                              max(max(sub_sub_full['units']), max(sub_sub_full['stock'])) + 1, 1.0))
+        ax2 = ax.twinx()
+        ax2.plot(sub_sub_full['date'], sub_sub_full['price'], color='red')
+
+        sns.despine(ax=ax, right=True, left=True)
+        sns.despine(ax=ax2, left=True, right=False)
+        ax2.spines['right'].set_color('white')
 
         size = size.replace('/', '_')
         size = size.replace('\\', '_')
@@ -47,7 +54,7 @@ for item_id in item_ids:
         size = size.replace('>', '_')
         size = size.replace('|', '_')
 
-        name = 'plots\\' \
+        name = 'plots\\sales_by_item_size_price\\' \
                + str(item_id) \
                + '_' \
                + size + '.png'
